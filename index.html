@@ -808,28 +808,72 @@ document.getElementById('backToImgBtn').addEventListener('click', function(){
 
 /* ============================================================
    FITUR BAGIKAN — Web Share API (pop-up share bawaan HP)
+   Melampirkan gambar kartu persona (.png) jika browser mendukung.
    ============================================================ */
 document.getElementById('shareBtn').addEventListener('click', async function(){
+  const btn  = this;
   const nama = currentPersona ? currentPersona.title : "ini";
+  const imgSrc = currentPersona ? currentPersona.img : null;  // mis. "sweettooth.png"
 
-  const shareData = {
+  // Data teks (dipakai baik untuk share-dengan-file maupun fallback)
+  const textData = {
     title: "Skincare Persona Gen.U",
     text:  "Ternyata skincare persona aku adalah " + nama +
-           "! Bantu Gen.U market research dan cek persona kamu juga. Jangan lupa tag @genu.daily!",
-    url:   window.location.href
+           "! Bantu Gen.U market research dan cek persona kamu juga. Jangan lupa tag @genu.daily!"
   };
 
-  // navigator.share hanya aktif di HP (mobile) & butuh HTTPS
-  if (navigator.share) {
-    try {
-      await navigator.share(shareData);
-    } catch (err) {
-      // Pengguna membatalkan share atau terjadi error — tidak perlu ganggu user
-      console.log("Share dibatalkan / gagal:", err);
-    }
-  } else {
-    // Fallback untuk PC/Laptop atau browser yang tidak mendukung Web Share
+  // Jika sama sekali tidak ada Web Share (mis. PC/Laptop) → fallback alert
+  if (!navigator.share) {
     alert("Gunakan browser HP kamu untuk membagikan hasil ini dengan mudah!");
+    return;
+  }
+
+  // Beri indikasi loading singkat (menyiapkan gambar bisa makan waktu)
+  const labelAsli = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Menyiapkan gambar… ⏳";
+
+  try {
+    let fileArray = null;
+
+    // 1–2. Ambil gambar persona → Blob → File
+    if (imgSrc) {
+      try {
+        const res = await fetch(imgSrc);
+        const blob = await res.blob();
+        // Gunakan tipe dari blob, default ke image/png
+        const tipe = blob.type || "image/png";
+        const file = new File([blob], "persona.png", { type: tipe });
+        fileArray = [file];
+      } catch (imgErr) {
+        // Gagal mengambil gambar (mis. file belum diupload) → lanjut tanpa gambar
+        console.log("Gagal mengambil gambar untuk share:", imgErr);
+        fileArray = null;
+      }
+    }
+
+    // 3–4. Jika browser mendukung share file → kirim beserta gambar
+    if (fileArray && navigator.canShare && navigator.canShare({ files: fileArray })) {
+      await navigator.share({
+        files: fileArray,
+        title: textData.title,
+        text:  textData.text
+      });
+    } else {
+      // 5. Fallback: share teks + URL saja (tanpa gambar)
+      await navigator.share({
+        title: textData.title,
+        text:  textData.text,
+        url:   window.location.href
+      });
+    }
+  } catch (err) {
+    // Pengguna membatalkan share atau terjadi error — tidak perlu ganggu user
+    console.log("Share dibatalkan / gagal:", err);
+  } finally {
+    // Kembalikan tombol ke kondisi semula
+    btn.disabled = false;
+    btn.textContent = labelAsli;
   }
 });
 
