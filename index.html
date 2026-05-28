@@ -338,19 +338,56 @@
     font-size:.8rem;
     color:var(--rose-deep);
   }
-  .cta{
-    background:var(--rose-soft);
-    border:1px dashed var(--rose);
-    border-radius:16px;
-    padding:16px 16px;
-    font-size:.88rem;
-    line-height:1.55;
-    color:var(--brown);
-    margin-bottom:18px;
-    text-align:left;
+
+  /* ---------- Two-Step Reveal: state toggle ---------- */
+  .result-state{
+    display:none;
+    opacity:0;
+    transform:translateY(10px);
+    transition:opacity .45s ease, transform .45s ease;
   }
-  .cta strong{ color:var(--rose-deep); }
-  .cta .tag{ color:var(--green); font-weight:600; }
+  .result-state.active{
+    display:block;
+    opacity:1;
+    transform:translateY(0);
+  }
+  .result-state.leaving{
+    opacity:0;
+    transform:translateY(-10px);
+  }
+
+  /* Gambar detail (State 2) — sedikit lebih besar, tanpa animasi pop ulang */
+  .detail-img{
+    max-width:330px;
+    animation:fadeImg .5s ease both;
+  }
+  @keyframes fadeImg{
+    0%{ opacity:0; transform:translateY(8px); }
+    100%{ opacity:1; transform:translateY(0); }
+  }
+
+  /* Baris dua tombol di State 2 */
+  .btn-row{
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+    margin-top:4px;
+  }
+
+  /* Tombol "ghost" untuk navigasi kembali (lebih kalem) */
+  .btn.ghost{
+    background:transparent;
+    color:var(--green-deep);
+    border:2px solid var(--green);
+    box-shadow:none;
+  }
+  @media (hover:hover){
+    .btn.ghost:hover{
+      background:rgba(46,95,78,0.08);
+      transform:translateY(-2px);
+      box-shadow:0 8px 18px rgba(35,75,61,0.18);
+    }
+  }
 
   /* Layar loading kecil sebelum hasil muncul */
   .calc{ text-align:center; padding:40px 0; }
@@ -424,28 +461,44 @@
       <p>Menghitung persona kamu…</p>
     </div>
 
-    <!-- ===================== LAYAR 10: HASIL ===================== -->
+    <!-- ===================== LAYAR 10: HASIL (TWO-STEP REVEAL) ===================== -->
     <div class="step result" data-step="result">
-      <div class="reveal-label">Skincare Persona Kamu Adalah</div>
-      <h2 id="personaTitle">—</h2>
 
-      <!-- Gambar hasil diisi oleh JavaScript -->
-      <img src="" alt="Persona" class="persona-card" id="personaImg">
-      <!-- Pesan fallback jika gambar gagal dimuat (mis. file belum diupload) -->
-      <div class="img-fallback" id="imgFallback">
-        Gambar persona <b id="fbName"></b> belum dapat dimuat.<br>
-        Pastikan file gambar sudah diupload ke folder yang sama dengan <code>index.html</code>.
+      <!-- ---------- STATE 1: FRONT VIEW (Gambar Kartu) ---------- -->
+      <div class="result-state result-front active" id="resultFront">
+        <div class="reveal-label">Skincare Persona Kamu Adalah</div>
+        <h2 id="personaTitle">—</h2>
+
+        <!-- Gambar kartu persona (diisi JavaScript) -->
+        <img src="" alt="Persona" class="persona-card" id="personaImg">
+        <!-- Pesan fallback jika gambar gagal dimuat -->
+        <div class="img-fallback" id="imgFallback">
+          Gambar persona <b id="fbName"></b> belum dapat dimuat.<br>
+          Pastikan file gambar sudah diupload ke folder yang sama dengan <code>index.html</code>.
+        </div>
+
+        <!-- Tombol menuju State 2 -->
+        <button type="button" class="btn" id="toDetailBtn">Baca Detail Karakterku ➡️</button>
       </div>
 
-      <div class="cta">
-        Hi YOU! Gen.U sedang melakukan market research. <strong>Screenshot kartu persona ini</strong>,
-        upload ke IG Story &amp; tag <span class="tag">@genu.daily</span>, lalu tunjukin ke kasir booth kita
-        sekarang buat dapet <strong>Free Tester / Voucher diskon Gen.U!</strong>
-        Filling is Helping, Thank You :&gt;
+      <!-- ---------- STATE 2: BACK VIEW (Gambar Detail) ---------- -->
+      <div class="result-state result-back" id="resultBack">
+
+        <!-- Gambar detail karakter (diisi JavaScript) -->
+        <img src="" alt="Detail Persona" class="persona-card detail-img" id="personaDetailImg">
+        <!-- Fallback gambar detail -->
+        <div class="img-fallback" id="detailFallback">
+          Gambar detail <b id="fbDetailName"></b> belum dapat dimuat.<br>
+          Pastikan file gambar sudah diupload ke folder yang sama dengan <code>index.html</code>.
+        </div>
+
+        <!-- Dua tombol bawah -->
+        <div class="btn-row">
+          <button type="button" class="btn ghost" id="backToImgBtn">⬅️ Kembali ke Gambar</button>
+          <button type="submit" class="btn rose">Selesai &amp; Simpan Hasil</button>
+        </div>
       </div>
 
-      <!-- Tombol submit ke Formspree -->
-      <button type="submit" class="btn rose">Selesai &amp; Simpan Hasil</button>
     </div>
 
   </form>
@@ -537,10 +590,10 @@ const QUESTIONS = [
    DATA HASIL PERSONA
    ============================================================ */
 const PERSONAS = {
-  A:{ title:"The Caffeine Zombie", img:"zombie.png",     alt:"The Caffeine Zombie" },
-  B:{ title:"The Midnight Deadliner", img:"deadliner.png", alt:"The Midnight Deadliner" },
-  C:{ title:"The Sweet-Tooth Fairy", img:"sweettooth.png", alt:"The Sweet-Tooth Fairy" },
-  D:{ title:"The Sat-Set Hustler",  img:"hustler.png",    alt:"The Sat-Set Hustler" }
+  A:{ title:"The Caffeine Zombie",    img:"zombie.png",     detail:"zombie_detail.png",     alt:"The Caffeine Zombie" },
+  B:{ title:"The Midnight Deadliner", img:"deadliner.png",  detail:"deadliner_detail.png",  alt:"The Midnight Deadliner" },
+  C:{ title:"The Sweet-Tooth Fairy",  img:"sweettooth.png", detail:"sweettooth_detail.png", alt:"The Sweet-Tooth Fairy" },
+  D:{ title:"The Sat-Set Hustler",    img:"hustler.png",    detail:"hustler_detail.png",    alt:"The Sat-Set Hustler" }
 };
 
 /* ============================================================
@@ -677,30 +730,63 @@ function finishQuiz(){
     // Update input tersembunyi agar terkirim ke Formspree
     document.getElementById('hasil_persona').value = persona.title;
 
-    // Isi layar hasil
+    /* ---------- STATE 1: gambar kartu ---------- */
     document.getElementById('personaTitle').textContent = persona.title;
     const img = document.getElementById('personaImg');
     const fb  = document.getElementById('imgFallback');
     document.getElementById('fbName').textContent = persona.img;
-
-    // Reset tampilan, lalu pasang handler error sebelum set src
     fb.style.display = 'none';
     img.style.display = 'block';
-    img.onerror = function(){
-      // Gambar gagal load (mis. belum diupload / nama file beda)
-      img.style.display = 'none';
-      fb.style.display = 'block';
-    };
-    img.onload = function(){
-      img.style.display = 'block';
-      fb.style.display = 'none';
-    };
+    img.onerror = function(){ img.style.display = 'none'; fb.style.display = 'block'; };
+    img.onload  = function(){ img.style.display = 'block'; fb.style.display = 'none'; };
     img.src = persona.img;
     img.alt = persona.alt;
+
+    /* ---------- STATE 2: gambar detail ---------- */
+    const dImg = document.getElementById('personaDetailImg');
+    const dFb  = document.getElementById('detailFallback');
+    document.getElementById('fbDetailName').textContent = persona.detail;
+    dFb.style.display = 'none';
+    dImg.style.display = 'block';
+    dImg.onerror = function(){ dImg.style.display = 'none'; dFb.style.display = 'block'; };
+    dImg.onload  = function(){ dImg.style.display = 'block'; dFb.style.display = 'none'; };
+    dImg.src = persona.detail;
+    dImg.alt = persona.alt + " — Detail";
+
+    // Selalu mulai dari State 1 (front)
+    showResultState('front');
 
     showStep(stepByName('result'));
   }, 1300);
 }
+
+/* ============================================================
+   TOGGLE STATE HASIL (Front <-> Back) — transisi fade
+   ============================================================ */
+const resultFront = document.getElementById('resultFront');
+const resultBack  = document.getElementById('resultBack');
+
+function showResultState(which){
+  const showEl = (which === 'back') ? resultBack : resultFront;
+  const hideEl = (which === 'back') ? resultFront : resultBack;
+
+  if(hideEl.classList.contains('active')){
+    hideEl.classList.add('leaving');
+    hideEl.classList.remove('active');
+    setTimeout(function(){ hideEl.classList.remove('leaving'); }, 450);
+  }
+  setTimeout(function(){
+    showEl.classList.add('active');
+    showEl.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }, 180);
+}
+
+document.getElementById('toDetailBtn').addEventListener('click', function(){
+  showResultState('back');
+});
+document.getElementById('backToImgBtn').addEventListener('click', function(){
+  showResultState('front');
+});
 
 /* ============================================================
    START
