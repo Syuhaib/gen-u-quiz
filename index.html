@@ -389,6 +389,21 @@
     }
   }
 
+  /* Tombol "Bagikan" — menonjol dengan gradient rose→green + sedikit denyut */
+  .btn.share{
+    background:linear-gradient(135deg, var(--rose), var(--green));
+    box-shadow:0 10px 26px rgba(217,160,160,0.45);
+    position:relative;
+    animation:shareGlow 2.4s ease-in-out infinite;
+  }
+  @keyframes shareGlow{
+    0%,100%{ box-shadow:0 10px 26px rgba(217,160,160,0.45); }
+    50%    { box-shadow:0 12px 32px rgba(46,95,78,0.45); }
+  }
+  @media (hover:hover){
+    .btn.share:hover{ transform:translateY(-2px); box-shadow:0 16px 34px rgba(217,160,160,0.6); }
+  }
+
   /* Layar loading kecil sebelum hasil muncul */
   .calc{ text-align:center; padding:40px 0; }
   .calc .spinner{
@@ -492,8 +507,9 @@
           Pastikan file gambar sudah diupload ke folder yang sama dengan <code>index.html</code>.
         </div>
 
-        <!-- Dua tombol bawah -->
+        <!-- Tombol-tombol bawah -->
         <div class="btn-row">
+          <button type="button" class="btn share" id="shareBtn">Bagikan Hasilku 📲</button>
           <button type="button" class="btn ghost" id="backToImgBtn">⬅️ Kembali ke Gambar</button>
           <button type="submit" class="btn rose">Selesai &amp; Simpan Hasil</button>
         </div>
@@ -601,6 +617,7 @@ const PERSONAS = {
    ============================================================ */
 const tally = {A:0, B:0, C:0, D:0};   // pelacak jumlah pilihan
 let current = 0;                       // index pertanyaan saat ini
+let currentPersona = null;             // persona pemenang (untuk fitur Bagikan)
 
 /* Elemen */
 const steps        = document.querySelectorAll('.step');
@@ -726,6 +743,7 @@ function finishQuiz(){
   setTimeout(function(){
     const winner = computeWinner();
     const persona = PERSONAS[winner];
+    currentPersona = persona;   // simpan untuk fitur Bagikan
 
     // Update input tersembunyi agar terkirim ke Formspree
     document.getElementById('hasil_persona').value = persona.title;
@@ -786,6 +804,33 @@ document.getElementById('toDetailBtn').addEventListener('click', function(){
 });
 document.getElementById('backToImgBtn').addEventListener('click', function(){
   showResultState('front');
+});
+
+/* ============================================================
+   FITUR BAGIKAN — Web Share API (pop-up share bawaan HP)
+   ============================================================ */
+document.getElementById('shareBtn').addEventListener('click', async function(){
+  const nama = currentPersona ? currentPersona.title : "ini";
+
+  const shareData = {
+    title: "Skincare Persona Gen.U",
+    text:  "Ternyata skincare persona aku adalah " + nama +
+           "! Bantu Gen.U market research dan cek persona kamu juga. Jangan lupa tag @genu.daily!",
+    url:   window.location.href
+  };
+
+  // navigator.share hanya aktif di HP (mobile) & butuh HTTPS
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+    } catch (err) {
+      // Pengguna membatalkan share atau terjadi error — tidak perlu ganggu user
+      console.log("Share dibatalkan / gagal:", err);
+    }
+  } else {
+    // Fallback untuk PC/Laptop atau browser yang tidak mendukung Web Share
+    alert("Gunakan browser HP kamu untuk membagikan hasil ini dengan mudah!");
+  }
 });
 
 /* ============================================================
