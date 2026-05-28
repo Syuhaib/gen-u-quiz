@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Gen.U — Cek Skincare Persona Kamu!</title>
+
+<!-- Google Fonts: Poppins (teks/pertanyaan) + Playfair Display (judul/hasil) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;0,900;1,600&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* ============================================================
+     PALET WARNA & VARIABEL
+     ============================================================ */
+  :root{
+    --beige:        #F9F7F2;   /* Background */
+    --rose:         #D9A0A0;   /* Warna utama / tombol */
+    --rose-deep:    #C98A8A;   /* Rose lebih pekat untuk active */
+    --rose-soft:    #F6E7E7;   /* Rose pucat untuk latar lembut */
+    --brown:        #6A4F4F;   /* Teks cokelat tua */
+    --brown-soft:   #8A7070;
+    --green:        #2E5F4E;   /* Aksen hijau (dari brand Gen.U) */
+    --green-deep:   #234B3D;
+    --white:        #FFFFFF;
+    --shadow:       rgba(106, 79, 79, 0.18);
+    --shadow-soft:  rgba(106, 79, 79, 0.10);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  html,body{ height:100%; }
+
+  body{
+    font-family:'Poppins', sans-serif;
+    color:var(--brown);
+    background-color:var(--beige);
+    /* Motif clover/floral lembut sebagai tekstur latar */
+    background-image:
+      radial-gradient(circle at 18% 22%, rgba(217,160,160,0.10) 0 9px, transparent 10px),
+      radial-gradient(circle at 18% 30%, rgba(217,160,160,0.10) 0 9px, transparent 10px),
+      radial-gradient(circle at 25% 26%, rgba(217,160,160,0.10) 0 9px, transparent 10px),
+      radial-gradient(circle at 70% 70%, rgba(46,95,78,0.06) 0 9px, transparent 10px),
+      radial-gradient(circle at 70% 78%, rgba(46,95,78,0.06) 0 9px, transparent 10px),
+      radial-gradient(circle at 77% 74%, rgba(46,95,78,0.06) 0 9px, transparent 10px);
+    background-size: 320px 320px;
+    min-height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    overflow-x:hidden;
+  }
+
+  /* ============================================================
+     KARTU / WADAH UTAMA
+     ============================================================ */
+  .app{
+    width:100%;
+    max-width:480px;
+    background:rgba(255,255,255,0.55);
+    backdrop-filter:blur(6px);
+    border-radius:28px;
+    box-shadow:0 18px 50px var(--shadow);
+    border:1px solid rgba(255,255,255,0.8);
+    padding:26px 22px 30px;
+    position:relative;
+    overflow:hidden;
+    transition:padding .3s ease;
+  }
+  /* Saat di layar welcome, kecilkan padding agar gambar terasa penuh */
+  .app.is-welcome{ padding:14px 14px 16px; }
+
+  /* ============================================================
+     PROGRESS BAR
+     ============================================================ */
+  .progress-wrap{
+    height:8px;
+    background:var(--rose-soft);
+    border-radius:99px;
+    overflow:hidden;
+    margin-bottom:22px;
+    display:none;            /* disembunyikan di welcome & result */
+  }
+  .progress-bar{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, var(--rose), var(--green));
+    border-radius:99px;
+    transition:width .45s cubic-bezier(.6,.2,.1,1);
+  }
+
+  /* ============================================================
+     SISTEM LAYAR (STEP) + TRANSISI FADE
+     ============================================================ */
+  .step{
+    display:none;
+    opacity:0;
+    transform:translateY(14px);
+    transition:opacity .5s ease, transform .5s ease;
+  }
+  .step.active{
+    display:block;
+    opacity:1;
+    transform:translateY(0);
+  }
+  .step.leaving{
+    opacity:0;
+    transform:translateY(-14px);
+  }
+
+  /* ============================================================
+     WELCOME SCREEN — gambar penuh sebagai opening
+     ============================================================ */
+  .welcome{ text-align:center; }
+
+  /* Wrapper gambar = tombol mulai (seluruh area bisa diklik) */
+  .welcome-hero{
+    position:relative;
+    display:block;
+    width:100%;
+    border-radius:22px;
+    overflow:hidden;
+    cursor:pointer;
+    box-shadow:0 14px 36px var(--shadow);
+    outline:none;
+    -webkit-user-select:none;
+    user-select:none;
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .welcome-hero .hero{
+    width:100%;
+    display:block;
+    border-radius:22px;
+  }
+  @media (hover:hover){
+    .welcome-hero:hover{ transform:translateY(-3px); box-shadow:0 20px 46px var(--shadow); }
+  }
+  .welcome-hero:active{ transform:scale(.985); }
+  .welcome-hero:focus-visible{ box-shadow:0 0 0 4px var(--rose), 0 14px 36px var(--shadow); }
+
+  /* Hotspot transparan tepat di atas tombol 'Start Quiz!!' dalam gambar.
+     Tombol hijau berada di sekitar 78%–88% tinggi gambar, di tengah. */
+  .start-hotspot{
+    position:absolute;
+    left:14%;
+    width:72%;
+    top:65%;
+    height:8%;
+    border-radius:99px;
+    transition:box-shadow .25s ease, background .25s ease;
+  }
+  /* Denyut halus agar user tahu tombol itu interaktif */
+  .start-hotspot::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius:99px;
+    box-shadow:0 0 0 0 rgba(255,255,255,0.0);
+    animation:pulse 2.2s ease-out infinite;
+  }
+  @keyframes pulse{
+    0%   { box-shadow:0 0 0 0 rgba(255,255,255,0.55); }
+    70%  { box-shadow:0 0 0 14px rgba(255,255,255,0); }
+    100% { box-shadow:0 0 0 0 rgba(255,255,255,0); }
+  }
+  @media (hover:hover){
+    .welcome-hero:hover .start-hotspot{ box-shadow:0 0 0 3px rgba(255,255,255,0.7), 0 8px 22px rgba(35,75,61,0.45); }
+  }
+
+  /* ============================================================
+     PERTANYAAN
+     ============================================================ */
+  .q-count{
+    font-family:'Poppins', sans-serif;
+    font-weight:600;
+    font-size:.78rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--rose-deep);
+    margin-bottom:10px;
+  }
+  .q-text{
+    font-family:'Playfair Display', serif;
+    font-weight:700;
+    font-size:1.32rem;
+    line-height:1.35;
+    color:var(--brown);
+    margin-bottom:22px;
+  }
+
+  /* Pilihan jawaban — radio disembunyikan, label jadi card */
+  .options{ display:flex; flex-direction:column; gap:12px; }
+
+  .options input[type="radio"]{
+    position:absolute;
+    opacity:0;
+    width:0; height:0;
+    pointer-events:none;
+  }
+
+  .opt{
+    display:flex;
+    align-items:center;
+    gap:13px;
+    background:var(--white);
+    border:2px solid transparent;
+    border-radius:15px;
+    padding:15px 16px;
+    cursor:pointer;
+    font-size:.95rem;
+    font-weight:500;
+    color:var(--brown);
+    line-height:1.45;
+    box-shadow:0 4px 14px var(--shadow-soft);
+    transition:all .22s ease;
+    position:relative;
+  }
+  .opt .badge{
+    flex:0 0 auto;
+    width:30px; height:30px;
+    border-radius:50%;
+    background:var(--rose-soft);
+    color:var(--rose-deep);
+    font-weight:700;
+    font-size:.92rem;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:all .22s ease;
+    font-family:'Poppins', sans-serif;
+  }
+
+  /* Hover (perangkat dengan pointer) */
+  @media (hover:hover){
+    .opt:hover{
+      border-color:var(--rose);
+      transform:translateY(-2px);
+      box-shadow:0 8px 20px var(--shadow);
+    }
+    .opt:hover .badge{ background:var(--rose); color:#fff; }
+  }
+
+  /* Active / terpilih — berubah jadi Muted Rose */
+  .options input[type="radio"]:checked + .opt{
+    background:var(--rose);
+    border-color:var(--rose-deep);
+    color:#fff;
+    transform:translateY(-1px) scale(1.01);
+    box-shadow:0 10px 26px rgba(217,160,160,0.55);
+  }
+  .options input[type="radio"]:checked + .opt .badge{
+    background:#fff;
+    color:var(--rose-deep);
+  }
+
+  /* ============================================================
+     TOMBOL
+     ============================================================ */
+  .btn{
+    display:inline-block;
+    width:100%;
+    border:none;
+    cursor:pointer;
+    font-family:'Poppins', sans-serif;
+    font-weight:700;
+    font-size:1.05rem;
+    color:#fff;
+    background:linear-gradient(135deg, var(--green), var(--green-deep));
+    padding:16px 22px;
+    border-radius:99px;
+    box-shadow:0 10px 24px rgba(35,75,61,0.35);
+    transition:transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+    letter-spacing:.01em;
+  }
+  .btn:active{ transform:scale(.97); }
+  @media (hover:hover){
+    .btn:hover{ transform:translateY(-2px); box-shadow:0 14px 30px rgba(35,75,61,0.42); }
+  }
+  .btn.rose{
+    background:linear-gradient(135deg, var(--rose), var(--rose-deep));
+    box-shadow:0 10px 24px rgba(217,160,160,0.5);
+  }
+  @media (hover:hover){
+    .btn.rose:hover{ box-shadow:0 14px 30px rgba(217,160,160,0.6); }
+  }
+
+  /* ============================================================
+     LAYAR HASIL
+     ============================================================ */
+  .result{ text-align:center; }
+  .result .reveal-label{
+    font-family:'Poppins', sans-serif;
+    font-weight:600;
+    font-size:.78rem;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--rose-deep);
+    margin-bottom:6px;
+  }
+  .result h2{
+    font-family:'Playfair Display', serif;
+    font-weight:800;
+    font-size:1.7rem;
+    color:var(--green-deep);
+    margin-bottom:16px;
+  }
+  .persona-card{
+    width:100%;
+    max-width:300px;
+    margin:0 auto 20px;
+    border-radius:20px;
+    display:block;
+    box-shadow:0 16px 40px var(--shadow);
+    animation:pop .6s cubic-bezier(.2,.8,.25,1.3) both;
+  }
+  @keyframes pop{
+    0%{ opacity:0; transform:scale(.85); }
+    100%{ opacity:1; transform:scale(1); }
+  }
+  .img-fallback{
+    display:none;
+    background:var(--rose-soft);
+    border:1px solid var(--rose);
+    border-radius:16px;
+    padding:22px 18px;
+    margin:0 auto 20px;
+    max-width:300px;
+    font-size:.85rem;
+    line-height:1.5;
+    color:var(--brown);
+  }
+  .img-fallback code{
+    background:#fff;
+    padding:1px 6px;
+    border-radius:6px;
+    font-size:.8rem;
+    color:var(--rose-deep);
+  }
+  .cta{
+    background:var(--rose-soft);
+    border:1px dashed var(--rose);
+    border-radius:16px;
+    padding:16px 16px;
+    font-size:.88rem;
+    line-height:1.55;
+    color:var(--brown);
+    margin-bottom:18px;
+    text-align:left;
+  }
+  .cta strong{ color:var(--rose-deep); }
+  .cta .tag{ color:var(--green); font-weight:600; }
+
+  /* Layar loading kecil sebelum hasil muncul */
+  .calc{ text-align:center; padding:40px 0; }
+  .calc .spinner{
+    width:48px; height:48px;
+    border:5px solid var(--rose-soft);
+    border-top-color:var(--rose);
+    border-radius:50%;
+    margin:0 auto 18px;
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .calc p{ font-family:'Playfair Display', serif; font-style:italic; color:var(--brown-soft); font-size:1.05rem; }
+
+  /* Footer brand kecil */
+  .brand-foot{
+    text-align:center;
+    margin-top:22px;
+    font-size:.72rem;
+    color:var(--brown-soft);
+    letter-spacing:.02em;
+  }
+  .brand-foot b{ color:var(--green); }
+
+  /* Responsif kecil */
+  @media (max-width:380px){
+    .welcome h1{ font-size:1.32rem; }
+    .q-text{ font-size:1.18rem; }
+    .opt{ font-size:.9rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Progress bar (muncul saat kuis berjalan) -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- ============================================================
+       FORM FORMSPREE — membungkus seluruh area kuis
+       ============================================================
+       ▼▼▼  GANTI "YOUR_ENDPOINT" DENGAN ID FORMSPREE KAMU  ▼▼▼
+       Contoh akhir: https://formspree.io/f/abcdwxyz
+  -->
+  <form action="https://formspree.io/f/YOUR_ENDPOINT" method="POST" id="quizForm">
+
+    <!-- Input tersembunyi untuk hasil persona (diisi oleh JavaScript) -->
+    <input type="hidden" name="Hasil_Persona" id="hasil_persona">
+
+    <!-- ===================== LAYAR 1: WELCOME ===================== -->
+    <!-- Gambar welcome jadi opening penuh. Seluruh gambar bisa diklik untuk mulai,
+         dan ada hotspot tombol "Start Quiz!!" yang pas menutupi tombol di gambar. -->
+    <div class="step welcome active" data-step="welcome">
+      <div class="welcome-hero" id="startBtn" role="button" tabindex="0" aria-label="Mulai Kuis">
+        <img src="welcome.png" alt="Which Skin Character Matches Your Personality? — Start Quiz" class="hero">
+        <!-- Hotspot transparan tepat di atas tombol 'Start Quiz!!' dalam gambar -->
+        <span class="start-hotspot" aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <!-- ===================== LAYAR 2-9: PERTANYAAN ===================== -->
+    <!-- Pertanyaan dirender otomatis oleh JavaScript ke dalam #questionHost -->
+    <div class="step" data-step="question" id="questionHost"></div>
+
+    <!-- ===================== LAYAR LOADING ===================== -->
+    <div class="step calc" data-step="calc">
+      <div class="spinner"></div>
+      <p>Menghitung persona kamu…</p>
+    </div>
+
+    <!-- ===================== LAYAR 10: HASIL ===================== -->
+    <div class="step result" data-step="result">
+      <div class="reveal-label">Skincare Persona Kamu Adalah</div>
+      <h2 id="personaTitle">—</h2>
+
+      <!-- Gambar hasil diisi oleh JavaScript -->
+      <img src="" alt="Persona" class="persona-card" id="personaImg">
+      <!-- Pesan fallback jika gambar gagal dimuat (mis. file belum diupload) -->
+      <div class="img-fallback" id="imgFallback">
+        Gambar persona <b id="fbName"></b> belum dapat dimuat.<br>
+        Pastikan file gambar sudah diupload ke folder yang sama dengan <code>index.html</code>.
+      </div>
+
+      <div class="cta">
+        Hi YOU! Gen.U sedang melakukan market research. <strong>Screenshot kartu persona ini</strong>,
+        upload ke IG Story &amp; tag <span class="tag">@genu.daily</span>, lalu tunjukin ke kasir booth kita
+        sekarang buat dapet <strong>Free Tester / Voucher diskon Gen.U!</strong>
+        Filling is Helping, Thank You :&gt;
+      </div>
+
+      <!-- Tombol submit ke Formspree -->
+      <button type="submit" class="btn rose">Selesai &amp; Simpan Hasil</button>
+    </div>
+
+  </form>
+
+  <div class="brand-foot">Made by <b>Gen.U</b> Health &amp; Innovation</div>
+</div>
+
+<script>
+/* ============================================================
+   DATA PERTANYAAN
+   Tiap opsi punya 'k' (key A/B/C/D) untuk sistem mayoritas.
+   ============================================================ */
+const QUESTIONS = [
+  {
+    q:"Jujur, minuman pertama yang nyentuh tenggorokanmu pas melek pagi itu apa?",
+    o:[
+      {k:"A", t:"Es kopi susu, americano, pokoknya kafein. Nyawa belum ngumpul kalau belum ngopi!"},
+      {k:"B", t:"Nggak sempet minum! Udah telat ngampus gara-gara begadang nugas."},
+      {k:"C", t:"Teh manis, susu rasa-rasa, atau es boba sisa semalam di kulkas."},
+      {k:"D", t:"Air putih aja sih, tapi pengen sesuatu yang lebih ngasih benefit buat nge-boost hari."}
+    ]
+  },
+  {
+    q:"Waktu ngaca pagi-pagi, hal apa yang paling sering bikin kamu insecure mau nangis?",
+    o:[
+      {k:"A", t:"Muka kering kerontang dan kusam banget, persis kayak kanebo kering."},
+      {k:"B", t:"Mata panda! Kantung mata udah sedalem palung mariana gara-gara kurang tidur."},
+      {k:"C", t:"Tiba-tiba jerawatan parah (breakout) habis cheat day jajan sembarangan."},
+      {k:"D", t:"Ngerasa kurang glowing dan fresh aja sih, padahal udah sibuk merawat diri."}
+    ]
+  },
+  {
+    q:"Dosen ngasih tugas numpuk + deadline besok. Pelarian utamamu ke mana?",
+    o:[
+      {k:"A", t:"Beli kopi extra shot. Pokoknya mata ini dilarang terpejam!"},
+      {k:"B", t:"Rebahan bentar (baca: prokrastinasi), eh ketiduran, terus bangun-bangun panik!"},
+      {k:"C", t:"Scroll ojol, nyari diskonan dessert, cake, atau minuman manis buat self-reward."},
+      {k:"D", t:"Bikin to-do list, bagi skala prioritas, beres-beres meja, langsung gasss ngerjain!"}
+    ]
+  },
+  {
+    q:"Kalau membongkar isi tas kampusmu sekarang, barang apa yang paling \"kamu banget\"?",
+    o:[
+      {k:"A", t:"Tumbler bekas isi kopi atau tumpukan bon struk coffee shop."},
+      {k:"B", t:"Concealer (buat nutupin mata panda) & dry shampoo (karena lupa keramas)."},
+      {k:"C", t:"Permen, cokelat, atau snack manis buat jaga-jaga kalau mood anjlok."},
+      {k:"D", t:"iPad/Laptop, planner rapi, dan botol minum besar biar tubuh tetap fit."}
+    ]
+  },
+  {
+    q:"Ngomong-ngomong soal olahraga, mana kalimat yang paling mendeskripsikan kamu?",
+    o:[
+      {k:"A", t:"Jalan kaki dari kosan ke coffee shop itu kehitung olahraga, kan?"},
+      {k:"B", t:"Boro-boro olahraga, jalan dari kasur ke kamar mandi aja rasanya berat banget."},
+      {k:"C", t:"Niatnya sih nge-gym/yoga, tapi ujung-ujungnya malah melipir beli minuman manis di jalan pulang."},
+      {k:"D", t:"Rutin workout, lari, atau ke gym. Keringat itu bukti kerja keras dan komitmen!"}
+    ]
+  },
+  {
+    q:"Rutinitas malammu setelah seharian capek di kampus itu kayak gimana?",
+    o:[
+      {k:"A", t:"Cuci muka doang pakai sabun, rasanya kulit langsung ketarik saking keringnya."},
+      {k:"B", t:"Sering banget ketiduran masih pakai make-up gara-gara tepar di depan laptop."},
+      {k:"C", t:"Skincare-an sih lengkap, tapi sambil ngemil manis sebelum tidur (yang bikin jerawatan juga)."},
+      {k:"D", t:"Secapek apapun, double cleansing dan basic skincare itu harga mati."}
+    ]
+  },
+  {
+    q:"Bayangin ini hari Minggu (hari libur). Apa agenda utamamu?",
+    o:[
+      {k:"A", t:"Cafe-hopping, cari tempat ngopi estetik baru sambil numpang Wi-Fi."},
+      {k:"B", t:"Hibernasi massal seharian di kamar buat bayar utang tidur minggu lalu."},
+      {k:"C", t:"Berburu kuliner manis, hunting dessert cantik yang viral di TikTok."},
+      {k:"D", t:"Olahraga pagi, ikut kepanitiaan/webinar, atau ngerjain side-hustle. Produktivitas is key."}
+    ]
+  },
+  {
+    q:"Terakhir! Kalau ada orang ngasih kamu produk skincare/wellness, apa syarat mutlak dari kamu biar mau konsisten dipakai?",
+    o:[
+      {k:"A", t:"Harus bisa balikin hidrasi kulitku yang hilang disedot sama AC kelas & kafein."},
+      {k:"B", t:"Harus super gampang pakainya! Aku nggak ada waktu buat ritual skincare 10 tahap."},
+      {k:"C", t:"Rasanya wajib enak! Kalau rasanya kayak obat pait, mending buang aja."},
+      {k:"D", t:"Komposisinya harus clean, no bs, dan efeknya beneran kerasa buat orang sibuk."}
+    ]
+  }
+];
+
+/* ============================================================
+   DATA HASIL PERSONA
+   ============================================================ */
+const PERSONAS = {
+  A:{ title:"The Caffeine Zombie", img:"zombie.png",     alt:"The Caffeine Zombie" },
+  B:{ title:"The Midnight Deadliner", img:"deadliner.png", alt:"The Midnight Deadliner" },
+  C:{ title:"The Sweet-Tooth Fairy", img:"sweettooth.png", alt:"The Sweet-Tooth Fairy" },
+  D:{ title:"The Sat-Set Hustler",  img:"hustler.png",    alt:"The Sat-Set Hustler" }
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const tally = {A:0, B:0, C:0, D:0};   // pelacak jumlah pilihan
+let current = 0;                       // index pertanyaan saat ini
+
+/* Elemen */
+const steps        = document.querySelectorAll('.step');
+const questionHost = document.getElementById('questionHost');
+const progressWrap = document.getElementById('progressWrap');
+const progressBar  = document.getElementById('progressBar');
+
+/* ============================================================
+   NAVIGASI ANTAR LAYAR (dengan transisi fade)
+   ============================================================ */
+function showStep(targetEl){
+  const currentActive = document.querySelector('.step.active');
+  if(currentActive && currentActive !== targetEl){
+    currentActive.classList.add('leaving');
+    currentActive.classList.remove('active');
+    setTimeout(()=> currentActive.classList.remove('leaving'), 500);
+  }
+  // beri jeda kecil agar transisi keluar terlihat sebelum masuk
+  setTimeout(()=>{
+    targetEl.classList.add('active');
+    targetEl.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }, currentActive && currentActive !== targetEl ? 220 : 0);
+}
+
+function stepByName(name){
+  return document.querySelector('.step[data-step="'+name+'"]');
+}
+
+/* ============================================================
+   RENDER PERTANYAAN
+   ============================================================ */
+function renderQuestion(idx){
+  const item = QUESTIONS[idx];
+  let html = '';
+  html += '<div class="q-count">Pertanyaan '+(idx+1)+' / '+QUESTIONS.length+'</div>';
+  html += '<div class="q-text">'+item.q+'</div>';
+  html += '<div class="options">';
+  item.o.forEach(function(opt, i){
+    const id = 'q'+idx+'_'+opt.k;
+    // name unik per pertanyaan agar semua jawaban terkirim ke Formspree
+    html += ''
+      + '<input type="radio" name="Q'+(idx+1)+'" id="'+id+'" value="'+opt.k+'. '+escapeAttr(opt.t)+'">'
+      + '<label class="opt" for="'+id+'" data-key="'+opt.k+'">'
+      +   '<span class="badge">'+opt.k+'</span>'
+      +   '<span class="opt-text">'+opt.t+'</span>'
+      + '</label>';
+  });
+  html += '</div>';
+  questionHost.innerHTML = html;
+
+  // Pasang event: sekali klik = hitung + lanjut otomatis
+  questionHost.querySelectorAll('input[type="radio"]').forEach(function(radio){
+    radio.addEventListener('change', function(){
+      const key = this.nextElementSibling.getAttribute('data-key');
+      handleAnswer(key);
+    });
+  });
+
+  updateProgress(idx);
+}
+
+function escapeAttr(s){
+  return s.replace(/"/g,'&quot;');
+}
+
+function updateProgress(idx){
+  const pct = ((idx) / QUESTIONS.length) * 100;
+  progressBar.style.width = pct + '%';
+}
+
+/* ============================================================
+   TANGANI JAWABAN — hitung & lanjut
+   ============================================================ */
+let locked = false;   // cegah klik ganda saat transisi
+function handleAnswer(key){
+  if(locked) return;
+  locked = true;
+
+  tally[key] = (tally[key] || 0) + 1;
+
+  // Beri jeda singkat agar user lihat warna terpilih, lalu lanjut
+  setTimeout(function(){
+    current++;
+    if(current < QUESTIONS.length){
+      // pindah ke pertanyaan berikutnya
+      const qStep = stepByName('question');
+      // fade keluar isi lama, render baru, fade masuk
+      qStep.classList.add('leaving');
+      qStep.classList.remove('active');
+      setTimeout(function(){
+        renderQuestion(current);
+        qStep.classList.remove('leaving');
+        qStep.classList.add('active');
+        qStep.scrollIntoView({behavior:'smooth', block:'nearest'});
+        locked = false;
+      }, 320);
+    }else{
+      // selesai → layar loading → hasil
+      progressBar.style.width = '100%';
+      finishQuiz();
+    }
+  }, 280);
+}
+
+/* ============================================================
+   HITUNG PEMENANG (MAYORITAS) + TIE-BREAKER → D
+   ============================================================ */
+function computeWinner(){
+  const max = Math.max(tally.A, tally.B, tally.C, tally.D);
+  // kumpulkan semua key yang seri di nilai tertinggi
+  const leaders = ['A','B','C','D'].filter(function(k){ return tally[k] === max; });
+  // Aturan tie-breaker: jika lebih dari satu pemimpin → pilih D (Hustler)
+  if(leaders.length > 1){
+    return 'D';
+  }
+  return leaders[0];
+}
+
+function finishQuiz(){
+  showStep(stepByName('calc'));
+  progressWrap.style.display = 'none';
+
+  setTimeout(function(){
+    const winner = computeWinner();
+    const persona = PERSONAS[winner];
+
+    // Update input tersembunyi agar terkirim ke Formspree
+    document.getElementById('hasil_persona').value = persona.title;
+
+    // Isi layar hasil
+    document.getElementById('personaTitle').textContent = persona.title;
+    const img = document.getElementById('personaImg');
+    const fb  = document.getElementById('imgFallback');
+    document.getElementById('fbName').textContent = persona.img;
+
+    // Reset tampilan, lalu pasang handler error sebelum set src
+    fb.style.display = 'none';
+    img.style.display = 'block';
+    img.onerror = function(){
+      // Gambar gagal load (mis. belum diupload / nama file beda)
+      img.style.display = 'none';
+      fb.style.display = 'block';
+    };
+    img.onload = function(){
+      img.style.display = 'block';
+      fb.style.display = 'none';
+    };
+    img.src = persona.img;
+    img.alt = persona.alt;
+
+    showStep(stepByName('result'));
+  }, 1300);
+}
+
+/* ============================================================
+   START
+   ============================================================ */
+const appEl = document.querySelector('.app');
+appEl.classList.add('is-welcome');   // padding penuh untuk gambar opening
+
+function startQuiz(){
+  appEl.classList.remove('is-welcome');
+  progressWrap.style.display = 'block';
+  renderQuestion(0);
+  showStep(stepByName('question'));
+}
+
+const startBtn = document.getElementById('startBtn');
+startBtn.addEventListener('click', startQuiz);
+// Dukungan keyboard: Enter / Spasi pada area gambar welcome
+startBtn.addEventListener('keydown', function(e){
+  if(e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar'){
+    e.preventDefault();
+    startQuiz();
+  }
+});
+
+/* Cegah Enter men-submit form sebelum waktunya */
+document.getElementById('quizForm').addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){
+    const isSubmitBtn = e.target && e.target.type === 'submit';
+    if(!isSubmitBtn) e.preventDefault();
+  }
+});
+</script>
+</body>
+</html>
